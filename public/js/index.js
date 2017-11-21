@@ -1,0 +1,1 @@
+//document.getElementById('game').style.backgroundImage = "url('/assets/map/tiles.png')"
