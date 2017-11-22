@@ -1,6 +1,10 @@
 
 
 var Game = {};
+var collisionLayer;
+var id;
+var map;
+var initialized = false;
 
 Game.init = function(){
     game.stage.disableVisibilityChange = true;
@@ -13,35 +17,37 @@ Game.preload = function() {
 };
 
 Game.create = function(){
-    //Game.playerMap = {};
-    //var testKey = game.input.keyboard.addKey(Phaser.Keyboard.ENTER);
-    //testKey.onDown.add(Client.sendTest, this);
-    var map = game.add.tilemap('map');
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+
+    Game.playerMap = {};
+    map = game.add.tilemap('map');
     map.addTilesetImage('tiles', 'tileset'); // tilesheet is the key of the tileset in map's JSON file
-    var layer;
-    for(var i = 0; i < map.layers.length; i++) {
-        layer = map.createLayer(i);
-    }
+
+    var layer = map.createLayer('layer');
+
+    
+
+    var objects = map.createLayer('objects');
+
+    
+
+    collisionLayer = map.createLayer('collision');
+    //collisionLayer.visible = false;
+    //map.setCollisionByExclusion([], true, collisionLayer);
+    //collisionLayer.resizeWorld();
+    map.setCollisionBetween(1, map.tilesets[0].total, true, collisionLayer);
+    
+    //collisionLayer.resizeWorld();
+    
+    Client.askNewPlayer();
+
+    
     layer.inputEnabled = true; // Allows clicking on the map ; it's enough to do it on the last layer
-    // layer.events.onInputUp.add(Game.getCoordinates, this);
-    // Client.askNewPlayer();
-};
+    // // Handles player movements
+    layer.events.onInputUp.add(Game.getCoordinates, this);
 
-Game.getCoordinates = function(layer,pointer){
-    // Client.sendClick(pointer.worldX,pointer.worldY);
-};
-
-Game.addNewPlayer = function(id,x,y){
-    Game.playerMap[id] = game.add.sprite(x,y,'sprite');
-};
-
-Game.movePlayer = function(id,x,y){
-    var player = Game.playerMap[id];
-    var distance = Phaser.Math.distance(player.x,player.y,x,y);
-    var tween = game.add.tween(player);
-    var duration = distance*10;
-    tween.to({x:x,y:y}, duration);
-    tween.start();
+    
+    
 };
 
 Game.removePlayer = function(id){
@@ -49,6 +55,36 @@ Game.removePlayer = function(id){
     delete Game.playerMap[id];
 };
 
-var game = new Phaser.Game(30*16, 30*16, Phaser.AUTO, document.getElementById('game'));
-game.state.add('Game',Game);
-game.state.start('Game');
+Game.addNewPlayer = function(id,x,y){
+    
+    Game.playerMap[id] = game.add.sprite(x,y,'sprite');
+    game.physics.enable(Game.playerMap[id], Phaser.Physics.ARCADE);
+    Game.playerMap[id].body.collideWorldBounds = true;
+
+    game.camera.follow(Game.playerMap[this.id]);
+    this.id = id;
+
+    initialized = true;
+};
+
+Game.removePlayer = function(id){
+    Game.playerMap[id].destroy();
+    delete Game.playerMap[id];
+};
+
+Game.getCoordinates = function(layer,pointer){
+    Client.sendClick(pointer.worldX,pointer.worldY);
+};
+
+Game.movePlayer = function(id,x,y){
+    var player = Game.playerMap[id];
+    var distance = Phaser.Math.distance(player.x,player.y,x,y);
+    var duration = distance*10;
+    var tween = game.add.tween(player);
+    
+    tween.to({x:x,y:y}, duration);
+    tween.start();
+
+};
+
+
